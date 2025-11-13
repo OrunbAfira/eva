@@ -7,13 +7,14 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 require_once 'config.php';
+require_once 'risk_functions.php';
 
 $nome_usuario = $_SESSION['usuario_nome'];
 $primeiro_nome = explode(' ', $nome_usuario)[0];
 
 date_default_timezone_set('America/Sao_Paulo');
 
-// Formatação elegante da data em português com UTF-8
+// Formatação português com UTF-8
 $dias = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 $meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
@@ -143,20 +144,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $mensagem_regra = "<div class='mensagem erro'>Nome do critério e pontos são obrigatórios. Pontos devem ser maior que zero.</div>";
         }
     } elseif ($_POST['action'] === 'toggle_regra') {
-        $regra_id = $_POST['regra_id'] ?? 0;
-        $novo_status = $_POST['novo_status'] ?? 0;
+        // Validação rigorosa dos inputs
+        $regra_id = filter_var($_POST['regra_id'] ?? 0, FILTER_VALIDATE_INT);
+        $novo_status = filter_var($_POST['novo_status'] ?? 0, FILTER_VALIDATE_INT);
         
-        if ($regra_id > 0) {
+        // Verifica se os valores são válidos
+        if ($regra_id === false || $regra_id <= 0) {
+            $mensagem_regra = "<div class='mensagem erro'>ID de regra inválido.</div>";
+        } elseif ($novo_status === false || ($novo_status !== 0 && $novo_status !== 1)) {
+            $mensagem_regra = "<div class='mensagem erro'>Status inválido.</div>";
+        } else {
             $stmt = $conexao->prepare("UPDATE regras_risco SET ativo = ? WHERE id = ?");
-            $stmt->bind_param("ii", $novo_status, $regra_id);
             
-            if ($stmt->execute()) {
-                $status_texto = $novo_status ? 'ativada' : 'desativada';
-                $mensagem_regra = "<div class='mensagem sucesso'>Regra {$status_texto} com sucesso!</div>";
+            if (!$stmt) {
+                $mensagem_regra = "<div class='mensagem erro'>Erro ao preparar atualização.</div>";
+                error_log("Erro prepare toggle_regra: " . $conexao->error);
             } else {
-                $mensagem_regra = "<div class='mensagem erro'>Erro ao alterar status da regra.</div>";
+                $stmt->bind_param("ii", $novo_status, $regra_id);
+                
+                if ($stmt->execute()) {
+                    $linhas_afetadas = $stmt->affected_rows;
+                    $stmt->close();
+                    
+                    if ($linhas_afetadas > 0) {
+                        // Recalcula a pontuação de todos os alunos afetados por esta regra
+                        $alunos_atualizados = recalcularAlunosPorRegra($conexao, $regra_id);
+                        
+                        $status_texto = $novo_status ? 'ativada' : 'desativada';
+                        $mensagem_regra = "<div class='mensagem sucesso'>Regra {$status_texto} com sucesso! {$alunos_atualizados} aluno(s) atualizado(s).</div>";
+                    } else {
+                        $mensagem_regra = "<div class='mensagem erro'>Regra não encontrada.</div>";
+                    }
+                } else {
+                    $mensagem_regra = "<div class='mensagem erro'>Erro ao alterar status da regra.</div>";
+                    error_log("Erro execute toggle_regra: " . $stmt->error);
+                    $stmt->close();
+                }
             }
-            $stmt->close();
         }
     }
 }
