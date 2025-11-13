@@ -1,0 +1,22 @@
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.log
+
+# Configurações sensíveis (se houver)
+# config.php (descomente se contiver senhas)
+
+# Arquivos compactados
+*.zip
+*.rar
+*.7z

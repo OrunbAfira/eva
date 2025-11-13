@@ -1,0 +1,94 @@
+/* CSS DA ANIMAÇÃO EVA */
+.container-animacao {
+    position: relative;
+    width: 300px;
+    height: 450px; 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+}
+
+.logo-animacao {
+    margin: 20px 0;
+    width: 100px; 
+    height: auto;
+    z-index: 10;
+}
+
+.bloco-letra {
+    position: absolute; 
+    display: flex; 
+    align-items: baseline; 
+    font-size: 4em;
+    font-weight: bold; 
+    color: #ffffff; 
+    white-space: nowrap;
+}
+
+.letra { 
+    z-index: 10; 
+}
+
+.palavra {
+    font-size: 0.5em; 
+    font-weight: normal; 
+    margin-left: 10px; 
+    color: #f0f0f0; 
+    opacity: 0; 
+    transition: opacity 0.5s ease-out;
+}
+
+#bloco-e { 
+    top: 140px; 
+    left: 0; 
+} 
+
+#bloco-v { 
+    top: 140px; 
+    left: 70px; 
+}
+
+#bloco-a { 
+    top: 140px; 
+    left: 140px; 
+}
+
+#bloco-v { 
+    animation: girarDescerV 1.5s ease-out forwards; 
+    animation-delay: 0.5s; 
+}
+
+#bloco-a { 
+    animation: girarDescerA 1.5s ease-out forwards; 
+    animation-delay: 1s; 
+}
+
+.bloco-letra.animacao-completa .palavra { 
+    opacity: 1; 
+}
+
+@keyframes girarDescerV {
+    0% { 
+        transform: rotate(0deg); 
+        left: 70px; 
+        top: 140px; 
+    }
+    100% { 
+        transform: rotate(360deg); 
+        left: 0; 
+        top: 220px; 
+    }
+}
+
+@keyframes girarDescerA {
+    0% { 
+        transform: rotate(0deg); 
+        left: 140px; 
+        top: 140px; 
+    }
+    100% { 
+        transform: rotate(360deg); 
+        left: 0; 
+        top: 300px; 
+    }
+}
