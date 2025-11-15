@@ -70,3 +70,17 @@ function recalcularTodasPontuacoes($conexao) {
     
     return $alunos_atualizados;
 }
+
+function adicionarAlerta($conexao, $aluno_id, $regra_id, $pontos, $observacoes = '') {
+    $stmt = $conexao->prepare("INSERT INTO alertas (aluno_id, regra_id, pontos_atribuidos, data_alerta, status, observacoes) VALUES (?, ?, ?, NOW(), 'novo', ?)");
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param("iiis", $aluno_id, $regra_id, $pontos, $observacoes);
+    $ok = $stmt->execute();
+    $stmt->close();
+    if ($ok) {
+        recalcularPontuacaoAluno($conexao, $aluno_id);
+    }
+    return $ok;
+}
