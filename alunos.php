@@ -1,10 +1,6 @@
 <?php
 session_start();
-
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: index.php');
-    exit;
-}
+require_once 'session_guard.php';
 
 require_once 'config.php';
 
@@ -197,6 +193,6 @@ $stmt_alunos->close();
         </section>
 
     </main>
-    
+    <script src="assets/js/session_timeout.js"></script>
 </body>
 </html>

@@ -25,8 +25,10 @@ if ($stmt->num_rows > 0) {
     $stmt->fetch();
 
     if (password_verify($senha, $senha_hash)) {
+        session_regenerate_id(true);
         $_SESSION['usuario_id'] = $id;
         $_SESSION['usuario_nome'] = $nome;
+        $_SESSION['last_activity'] = time();
         
         $stmt->close();
         $conn->close();

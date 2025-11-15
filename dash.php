@@ -1,10 +1,6 @@
 <?php
 session_start();
-
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: index.php');
-    exit;
-}
+require_once 'session_guard.php';
 
 require_once 'config.php';
 require_once 'risk_functions.php';
@@ -484,5 +480,6 @@ $stmt->close();
             });
         });
     </script>
+    <script src="assets/js/session_timeout.js"></script>
 </body>
 </html>
