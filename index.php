@@ -45,6 +45,9 @@
                     <input type="password" id="password" name="password" placeholder="Senha" required>
                 </div>
 
+                <div class="form-options">
+                    <div></div> <a href="esqueci_senha.php">Esqueci minha senha</a>
+                </div>
 
                 <button type="submit" class="btn-login">Entrar</button>
             </form>
