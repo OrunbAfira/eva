@@ -1,5 +1,10 @@
 <?php
 // Detalhes da conexão com o banco de dados
+// Define o fuso horário padrão do PHP para garantir horários corretos em logs e datas
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('America/Sao_Paulo');
+}
+ 
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root'); 
 define('DB_PASSWORD', '');     

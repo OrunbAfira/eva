@@ -73,7 +73,7 @@
 
             <div class="info">Por segurança, a resposta será a mesma independentemente do e-mail informado.</div>
 
-            <form method="post" action="#">
+            <form method="post" action="processar_esqueci_senha.php">
                 <div class="input-group">
                     <label for="email">E-mail</label>
                     <input type="email" id="email" name="email" placeholder="seu@email.com" required>
