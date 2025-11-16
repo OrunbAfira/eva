@@ -33,14 +33,59 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-// Conteúdo do e-mail (sem link de reset por design atual do projeto)
-$assunto = 'EVA - Recebemos sua solicitação';
+// Garante tabela de tokens
+if ($conexao instanceof mysqli) {
+    $conexao->query("CREATE TABLE IF NOT EXISTS recuperacao_senha (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        token VARCHAR(64) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL,
+        INDEX(token), INDEX(email)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+}
+
+// Verifica se usuário existe
+$usuarioExiste = false;
+if ($conexao instanceof mysqli) {
+    if ($stmt = $conexao->prepare('SELECT id FROM usuarios WHERE email = ? LIMIT 1')) {
+        $stmt->bind_param('s', $email);
+        if ($stmt->execute()) {
+            $stmt->store_result();
+            $usuarioExiste = ($stmt->num_rows > 0);
+        }
+        $stmt->close();
+    }
+}
+
+// Gera token (sempre gera para não expor existência) e salva apenas se usuário existir
+$token = bin2hex(random_bytes(32));
+$expiraEm = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
+if ($usuarioExiste && $conexao instanceof mysqli) {
+    if ($stmt = $conexao->prepare('INSERT INTO recuperacao_senha (email, token, expires_at, used, created_at) VALUES (?,?,?,?,NOW())')) {
+        $used = 0;
+        $stmt->bind_param('sssi', $email, $token, $expiraEm, $used);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+// Monta link de redefinição
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$base = rtrim(dirname($_SERVER['REQUEST_URI'] ?? '/'), '/\\') . '/';
+$resetUrl = $scheme . '://' . $host . $base . 'redefinir_senha.php?token=' . urlencode($token);
+
+// Conteúdo do e-mail (inclui link de redefinição)
+$assunto = 'EVA - Redefinição de senha';
 $mensagemHtml = '<p>Olá,</p>' .
-    '<p>Recebemos sua solicitação de recuperação de senha. Caso exista uma conta associada a este e-mail, entraremos em contato com instruções.</p>' .
+    '<p>Recebemos sua solicitação de recuperação de senha. Se existir uma conta associada a este e-mail, você pode redefinir sua senha pelo link abaixo. Este link expira em 1 hora.</p>' .
+    '<p><a href="' . htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8') . '">Redefinir minha senha</a></p>' .
     '<p>Se você não solicitou, pode ignorar esta mensagem.</p>' .
     '<p>— Equipe EVA</p>';
 // Texto alternativo (para clientes que não renderizam HTML)
-$mensagemTexto = "Olá,\r\n\r\nRecebemos sua solicitação de recuperação de senha. Caso exista uma conta associada a este e-mail, entraremos em contato com instruções.\r\n\r\nSe você não solicitou, pode ignorar esta mensagem.\r\n\r\n— Equipe EVA";
+$mensagemTexto = "Olá,\r\n\r\nRecebemos sua solicitação de recuperação de senha. Se existir uma conta associada a este e-mail, use o link abaixo para redefinir sua senha (expira em 1 hora):\r\n\r\n" . $resetUrl . "\r\n\r\nSe você não solicitou, ignore esta mensagem.\r\n\r\n— Equipe EVA";
 
 // Cabeçalhos (UTF-8 e HTML)
 $headers = [];
@@ -51,21 +96,10 @@ $headers[] = 'Reply-To: no-reply@localhost';
 $headers[] = 'X-Mailer: PHP/' . phpversion();
 $headersStr = implode("\r\n", $headers);
 
-// Opcional: verificar existência de usuário (controlado por config)
+// Política de envio
 $podeEnviar = true;
 if (defined('SMTP_SEND_ONLY_IF_USER_EXISTS') && SMTP_SEND_ONLY_IF_USER_EXISTS === true) {
-    if ($conexao instanceof mysqli) {
-        if ($stmt = $conexao->prepare('SELECT id FROM usuarios WHERE email = ? LIMIT 1')) {
-            $stmt->bind_param('s', $email);
-            if ($stmt->execute()) {
-                $stmt->store_result();
-                if ($stmt->num_rows === 0) {
-                    $podeEnviar = false;
-                }
-            }
-            $stmt->close();
-        }
-    }
+    if (!$usuarioExiste) { $podeEnviar = false; }
 }
 
 $enviado = false;
@@ -98,8 +132,7 @@ if ($podeEnviar) {
             }
         }
         if (!$enviado) {
-            $bcc = (defined('SMTP_BCC_TO_FROM') && SMTP_BCC_TO_FROM) ? SMTP_FROM : null;
-            $enviado = smtp_send($email, $assunto, $mensagemHtml, SMTP_FROM, SMTP_FROM_NAME, SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_ENCRYPTION, 30, $mensagemTexto, $bcc);
+            $enviado = smtp_send($email, $assunto, $mensagemHtml, SMTP_FROM, SMTP_FROM_NAME, SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_ENCRYPTION, 30);
         }
     } else {
         // Fallback: tenta mail() (requer SMTP no php.ini em Windows)
