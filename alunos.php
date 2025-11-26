@@ -58,8 +58,8 @@ $stmt_alunos->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alunos - Plataforma EVA</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="stylesheet" href="alunos.css"> </head>
+    <link rel="stylesheet" href="css/componentes/dashboard.css">
+    </head>
 <body>
 
     <nav class="sidebar">

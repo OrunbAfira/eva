@@ -1,0 +1,35 @@
+/* css/componentes/register.css */
+
+.login-form.register-form {
+    justify-content: flex-start; /* Alinha o formulário de registro no topo */
+}
+
+/* Ajustes para o formulário de registro para evitar a rolagem */
+.login-form.register-form h1 {
+    margin-bottom: 5px;
+}
+
+.login-form.register-form p {
+    margin-bottom: 15px;
+}
+
+.login-form.register-form .input-group {
+    margin-bottom: 10px;
+}
+
+.login-form.register-form .input-group input {
+    padding: 10px 15px;
+}
+
+.login-form.register-form .input-group-checkbox {
+    margin-bottom: 10px;
+}
+
+.login-form.register-form .btn-login {
+    padding: 12px;
+    margin-top: 5px;
+}
+
+.login-form.register-form .register-link {
+    margin-top: 15px;
+}

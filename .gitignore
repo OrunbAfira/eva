@@ -1,4 +1,24 @@
-# Arquivos de sistema
+# Environment files
+.env
+.env.*
+
+# Local config overrides
+*.local.php
+
+# Debug/preview artifacts
+assets/debug/
+assets/debug/*
+
+# Composer vendor (if later added)
+vendor/
+
+# Node modules (if later added)
+node_modules/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.log# Arquivos de sistema
 .DS_Store
 Thumbs.db
 

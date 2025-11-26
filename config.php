@@ -1,20 +1,19 @@
 <?php
-// Detalhes da conexão com o banco de dados
-// Define o fuso horário padrão do PHP para garantir horários corretos em logs e datas
+// Timezone
 if (function_exists('date_default_timezone_set')) {
-    date_default_timezone_set('America/Sao_Paulo');
+    date_default_timezone_set(getenv('APP_TZ') ?: 'America/Sao_Paulo');
 }
- 
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root'); 
-define('DB_PASSWORD', '');     
-define('DB_NAME', 'eva'); 
 
-// Tenta estabelecer a conexão
-$conexao = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+// DB config via env (fallback para local)
+$db_server = getenv('DB_HOST') ?: '127.0.0.1';
+$db_user   = getenv('DB_USER') ?: 'root';
+$db_pass   = getenv('DB_PASS') ?: '';
+$db_name   = getenv('DB_NAME') ?: 'eva';
 
-// Verifica se houve erro na conexão
+// Conexão
+$conexao = new mysqli($db_server, $db_user, $db_pass, $db_name);
 if ($conexao->connect_error) {
-    die("Erro de conexão: " . $conexao->connect_error);
+    die("Erro de conexão com o banco de dados: " . $conexao->connect_error);
 }
+$conexao->set_charset('utf8mb4');
 ?>

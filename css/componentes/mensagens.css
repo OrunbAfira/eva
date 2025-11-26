@@ -1,0 +1,20 @@
+/* componentes/mensagens.css */
+.error-message {
+    background-color: var(--cor-erro-fundo);
+    border: 1px solid var(--cor-erro-borda);
+    border-radius: 5px;
+    color: var(--cor-erro-texto);
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.success-message {
+    background-color: var(--cor-sucesso-fundo);
+    border: 1px solid var(--cor-sucesso-borda);
+    border-radius: 5px;
+    color: var(--cor-sucesso-texto);
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}

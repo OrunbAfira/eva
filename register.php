@@ -15,6 +15,12 @@ switch ($erro) {
     case 'falha_registro':
         $mensagem_erro = 'Erro interno. Tente novamente mais tarde.';
         break;
+    case 'senhas_nao_coincidem':
+        $mensagem_erro = 'As senhas não coincidem. Por favor, tente novamente.';
+        break;
+    case 'termos_nao_aceitos':
+        $mensagem_erro = 'Você deve aceitar os Termos de Uso para criar uma conta.';
+        break;
 }
 ?>
 <html lang="pt-BR">
@@ -22,8 +28,7 @@ switch ($erro) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Plataforma Educacional</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
     <div class="login-container">
@@ -36,7 +41,7 @@ switch ($erro) {
                 <div class="bloco-letra" id="bloco-a"><span class="letra">A</span><span class="palavra">luno</span></div>
             </div>
         </div>
-        <div class="login-form">
+        <div class="login-form register-form">
             <h1>Crie sua conta</h1>
             <p>Preencha os dados para começar a usar a plataforma.</p>
 
@@ -64,10 +69,23 @@ switch ($erro) {
                     <input type="password" id="password" name="password" placeholder="Crie uma senha forte" required>
                 </div>
 
+                <div class="input-group">
+                    <label for="confirm_password">Confirmar Senha</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Digite a senha novamente" required>
+                </div>
+
+                <div class="input-group-checkbox">
+                    <input type="checkbox" id="termos" name="termos" required>
+                    <label for="termos">Eu li e aceito os <a href="termos.php" target="_blank">Termos de Uso</a> e a <a href="politica_privacidade.php" target="_blank">Política de Privacidade</a>.</label>
+                </div>
+
                 <button type="submit" class="btn-login">Registrar</button>
             </form>
             <div class="register-link">
                 <p>Já tem uma conta? <a href="index.php">Faça login</a></p>
+            </div>
+            <div class="footer">
+                <p>&copy; 2025 - EVA | <a href="termos.php" target="_blank">Termos de Uso</a> | <a href="politica_privacidade.php" target="_blank">Política de Privacidade</a></p>
             </div>
         </div>
     </div>

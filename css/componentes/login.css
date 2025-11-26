@@ -1,0 +1,107 @@
+/* componentes/login.css */
+.login-form h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: var(--cor-texto-principal);
+}
+
+.login-form p {
+    font-size: 16px;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--cor-texto-label);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--cor-primaria);
+}
+
+.input-group-checkbox {
+    display: flex; 
+    align-items: center; 
+    margin-bottom: 15px;
+}
+
+.input-group-checkbox input {
+    margin-right: 10px; 
+    width: auto;
+}
+
+.input-group-checkbox label {
+    font-weight: normal;
+}
+
+.input-group-checkbox a {
+    color: var(--cor-primaria-hover); 
+    text-decoration: underline;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-options a {
+    color: var(--cor-primaria);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.form-options a:hover {
+    text-decoration: underline;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--cor-primaria);
+    border: none;
+    border-radius: 5px;
+    color: var(--cor-container);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-login:hover {
+    background-color: var(--cor-primaria-hover);
+}
+
+.register-link {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 14px;
+    color: var(--cor-texto-secundario);
+}
+
+.register-link a {
+    color: var(--cor-primaria);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}

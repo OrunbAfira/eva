@@ -4,6 +4,30 @@ require_once 'config.php';
 $nome = $_POST['nome'] ?? '';
 $email = $_POST['email'] ?? '';
 $senha = $_POST['password'] ?? '';
+$confirmar_senha = $_POST['confirm_password'] ?? '';
+$termos = isset($_POST['termos']) ? 'aceito' : '';
+
+// Verifica se os termos foram aceitos
+if ($termos !== 'aceito') {
+    $params = http_build_query([
+        'erro' => 'termos_nao_aceitos',
+        'nome' => $nome,
+        'email' => $email
+    ]);
+    header('Location: register.php?' . $params);
+    exit;
+}
+
+// Verifica se as senhas coincidem
+if ($senha !== $confirmar_senha) {
+    $params = http_build_query([
+        'erro' => 'senhas_nao_coincidem',
+        'nome' => $nome,
+        'email' => $email
+    ]);
+    header('Location: register.php?' . $params);
+    exit;
+}
 
 if (empty($nome) || empty($email) || empty($senha)) {
     $params = http_build_query([
@@ -34,9 +58,10 @@ if ($resultado->num_rows > 0) {
 $stmt_check->close();
 
 $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+$data_aceite = date('Y-m-d H:i:s'); // Pega a data e hora atuais
 
-$stmt = $conexao->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
-$stmt->bind_param("sss", $nome, $email, $senha_hash);
+$stmt = $conexao->prepare("INSERT INTO usuarios (nome, email, senha, termos_aceitos_em) VALUES (?, ?, ?, ?)");
+$stmt->bind_param("ssss", $nome, $email, $senha_hash, $data_aceite);
 
 if ($stmt->execute()) {
     $stmt->close();

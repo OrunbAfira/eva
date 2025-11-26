@@ -1,0 +1,18 @@
+/* variaveis.css */
+:root {
+    --cor-primaria: #3498db;
+    --cor-primaria-hover: #2980b9;
+    --cor-fundo: #f4f7f6;
+    --cor-container: #fff;
+    --cor-texto-principal: #2c3e50;
+    --cor-texto-secundario: #7f8c8d;
+    --cor-texto-label: #34495e;
+    --cor-borda: #ccc;
+    --cor-sucesso-fundo: #d1edff;
+    --cor-sucesso-borda: #b8daff;
+    --cor-sucesso-texto: #004085;
+    --cor-erro-fundo: #f8d7da;
+    --cor-erro-borda: #f5c2c7;
+    --cor-erro-texto: #842029;
+    --fonte-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}

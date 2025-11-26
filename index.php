@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Plataforma Educacional</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="animations.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 
@@ -24,6 +23,15 @@
         <div class="login-form">
             <h1>Bem-vindo(a) de volta!</h1>
             <p>Acesse a plataforma para continuar seu trabalho.</p>
+
+            <?php 
+            $erro = $_GET['erro'] ?? '';
+            if ($erro === 'login_invalido'): 
+            ?>
+                <div class="error-message">
+                    Não encontramos nenhuma conta com o email informado. Tente novamente ou <a href="register.php" style="color: #2980b9; text-decoration: underline;">crie uma conta</a>.
+                </div>
+            <?php endif; ?>
 
             <?php 
             $status = $_GET['status'] ?? '';
@@ -56,6 +64,7 @@
             </div>
             <div class="footer">
                 <p>&copy; 2025 - EVA | Educação Valoriza Aluno</p>
+                <p><a href="termos.php" target="_blank">Termos de Uso</a> | <a href="politica_privacidade.php" target="_blank">Política de Privacidade</a></p>
             </div>
         </div>
     </div>

@@ -33,18 +33,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-// Garante tabela de tokens
-if ($conexao instanceof mysqli) {
-    $conexao->query("CREATE TABLE IF NOT EXISTS recuperacao_senha (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) NOT NULL,
-        token VARCHAR(64) NOT NULL,
-        expires_at DATETIME NOT NULL,
-        used TINYINT(1) NOT NULL DEFAULT 0,
-        created_at DATETIME NOT NULL,
-        INDEX(token), INDEX(email)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-}
 
 // Verifica se usuário existe
 $usuarioExiste = false;

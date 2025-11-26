@@ -215,6 +215,11 @@ td .risk-level.medium {
     background-color: var(--risk-medium); 
 }
 
+/* Suporte às classes em PT-BR */
+.risk-level.baixo { background-color: #2ecc71; }
+.risk-level.medio { background-color: var(--risk-medium); }
+.risk-level.alto { background-color: var(--risk-high); }
+
 .empty-row td {
     text-align: center;
     color: var(--text-light);
@@ -294,6 +299,9 @@ td .risk-level.medium {
     line-height: 1.6;
     margin: 0;
 }
+
+/* Container da tabela */
+.table-container { padding: 16px; overflow-x: auto; }
 
 .form-container {
     background-color: #f8f9fa;
@@ -407,6 +415,21 @@ td .risk-level.medium {
     color: #6c757d;
 }
 
+/* Base para botões de ação */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #111827;
+    text-decoration: none;
+    cursor: pointer;
+}
+
 /* Botões de ação específicos */
 .btn-action.ativar {
     color: #28a745;
@@ -425,6 +448,14 @@ td .risk-level.medium {
     background-color: #f8d7da;
     color: #721c24;
 }
+
+.btn-action.delete { color: #b91c1c; border-color: #fecaca; }
+.btn-action.delete:hover { background-color: #fee2e2; }
+
+/* Status para alertas */
+.status.novo { background-color: #e0e7ff; color: #1e3a8a; }
+.status.em_andamento { background-color: #fff7ed; color: #9a3412; }
+.status.resolvido { background-color: #dcfce7; color: #166534; }
 
 /* Responsividade para formulários */
 @media (max-width: 768px) {
