@@ -1,34 +1,32 @@
 <?php
 session_start();
 
-require_once 'config.php'; // Inclui a configuração do banco de dados
-
-// A variável $conexao agora está disponível a partir do config.php
+require_once 'config.php'; // Inicializa conexão `$conexao`
 
 if ($conexao->connect_error) {
     die('Erro de conexão: ' . $conexao->connect_error);
 }
 
-// --- INÍCIO DA LÓGICA DE LOG ---
+// Registro simples de tentativas de login em arquivo local
 function log_login_attempt($email, $status) {
     $log_file = __DIR__ . '/assets/debug/login_attempts.log';
     $timestamp = date('Y-m-d H:i:s');
     $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'N/A';
     $log_message = "[$timestamp] - IP: $ip_address - Email: $email - Status: $status" . PHP_EOL;
     
-    // Garante que o diretório de debug exista
+    // Cria a pasta de debug se não existir
     if (!is_dir(__DIR__ . '/assets/debug')) {
         mkdir(__DIR__ . '/assets/debug', 0777, true);
     }
     
     file_put_contents($log_file, $log_message, FILE_APPEND);
 }
-// --- FIM DA LÓGICA DE LOG ---
+// Fim do registro de login
 
 $email = isset($_POST['email']) ? strtolower(trim($_POST['email'])) : '';
 $senha = $_POST['password'] ?? '';
 
-// Preparação segura e tratamento de erro para evitar HTTP 500 silencioso
+// Consulta preparada e tratamento de erro amigável
 $stmt = $conexao->prepare("SELECT id, nome, senha FROM usuarios WHERE email = ?");
 if ($stmt === false) {
     log_login_attempt($email, 'ERRO - Query prepare falhou: ' . ($conexao->error ?: 'desconhecido'));
@@ -46,7 +44,7 @@ $stmt->store_result();
 if ($stmt->num_rows > 0) {
     $stmt->bind_result($id, $nome, $senha_hash);
     $stmt->fetch();
-    // Log formato do hash para diagnosticar
+    // Diagnóstico: formato do hash de senha
     $hashInfo = 'unknown';
     if (is_string($senha_hash)) {
         if (strpos($senha_hash, '$2y$') === 0 || strpos($senha_hash, '$2a$') === 0) { $hashInfo = 'bcrypt'; }
@@ -62,9 +60,9 @@ if ($stmt->num_rows > 0) {
         $_SESSION['usuario_id'] = $id;
         $_SESSION['usuario_nome'] = $nome;
 
-        // 2FA: se habilitado, gerar e enviar código por e-mail
+        // 2FA: gera e envia código se habilitado
         $twofaEnabled = !empty($_SESSION['twofa_enabled']);
-        // Tenta ler flag do banco (usuarios.twofa_enabled)
+        // Lê flag do banco (usuarios.twofa_enabled)
         $st3 = $conexao->prepare('SELECT twofa_enabled, email FROM usuarios WHERE id = ? LIMIT 1');
         $emailDestino = $email;
         if ($st3) {
@@ -82,13 +80,11 @@ if ($stmt->num_rows > 0) {
         if ($twofaEnabled) {
             $codigo = random_int(100000, 999999);
             $_SESSION['twofa_code'] = $codigo;
-            $_SESSION['twofa_expires'] = time() + 300; // 5 minutos
+            $_SESSION['twofa_expires'] = time() + 300; // expira em 5 minutos
             $_SESSION['twofa_pending'] = true;
             $_SESSION['twofa_email'] = $email;
 
-            // emailDestino já definido acima (db fallback)
-
-            // Enviar e-mail com código 2FA (com tratamento de erro)
+            // Envia e-mail com o código 2FA
             require_once __DIR__ . '/lib/smtp_send.php';
             require_once __DIR__ . '/mail_config.php';
             $assunto = 'Seu código de verificação (2FA)';
@@ -101,9 +97,7 @@ if ($stmt->num_rows > 0) {
                 . '</div>';
             $okEmail = @smtp_send($emailDestino, $assunto, $html, SMTP_FROM, SMTP_FROM_NAME, SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_ENCRYPTION);
             $_SESSION['twofa_last_sent'] = time();
-            if (!$okEmail) {
-                log_login_attempt($email, 'AVISO - 2FA email falhou, prosseguindo com verificação');
-            }
+            if (!$okEmail) { log_login_attempt($email, 'AVISO - falha ao enviar 2FA'); }
 
             log_login_attempt($email, 'SUCESSO - 2FA requerido');
 
@@ -118,7 +112,7 @@ if ($stmt->num_rows > 0) {
         $stmt->close();
         $conexao->close();
         
-        // Log defensivo antes do redirect
+        // Log antes do redirecionamento
         @file_put_contents(__DIR__ . '/assets/debug/login_attempts.log', '['.date('Y-m-d H:i:s')."] Redirect -> dash.php\n", FILE_APPEND);
         header('Location: dash.php');
         exit;

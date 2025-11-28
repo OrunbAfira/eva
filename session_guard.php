@@ -1,16 +1,19 @@
 <?php
+// Inicializa sessão se necessário
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-$timeout = 300; // 5 minutes in seconds
+// Tempo máximo de inatividade (segundos)
+$timeout = 300; // 5 minutos
 
+// Exige usuário autenticado
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: index.php');
     exit;
 }
 
-// Se 2FA está pendente, redireciona para verificação (exceto já lá)
+// Se 2FA está pendente, força verificação (exceto se já na página)
 $current = basename($_SERVER['PHP_SELF'] ?? '');
 if (!empty($_SESSION['twofa_pending']) && $current !== 'verificar_2fa.php') {
     header('Location: verificar_2fa.php');

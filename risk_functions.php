@@ -1,5 +1,6 @@
 <?php
 
+// Recalcula pontuação e nível de risco de um aluno
 function recalcularPontuacaoAluno($conexao, $aluno_id) {
     $stmt = $conexao->prepare("
         SELECT COALESCE(SUM(al.pontos_atribuidos), 0) as total
@@ -34,6 +35,7 @@ function recalcularPontuacaoAluno($conexao, $aluno_id) {
     return $sucesso;
 }
 
+// Recalcula pontuação de todos alunos impactados por uma regra
 function recalcularAlunosPorRegra($conexao, $regra_id) {
     $stmt = $conexao->prepare("
         SELECT DISTINCT aluno_id 
@@ -55,6 +57,7 @@ function recalcularAlunosPorRegra($conexao, $regra_id) {
     return $alunos_atualizados;
 }
 
+// Recalcula pontuação para todos alunos ativos
 function recalcularTodasPontuacoes($conexao) {
     $stmt = $conexao->prepare("SELECT id FROM alunos WHERE status = 'ativo'");
     $stmt->execute();
@@ -71,6 +74,7 @@ function recalcularTodasPontuacoes($conexao) {
     return $alunos_atualizados;
 }
 
+// Adiciona um alerta e atualiza a pontuação do aluno
 function adicionarAlerta($conexao, $aluno_id, $regra_id, $pontos, $observacoes = '') {
     $stmt = $conexao->prepare("INSERT INTO alertas (aluno_id, regra_id, pontos_atribuidos, data_alerta, status, observacoes) VALUES (?, ?, ?, NOW(), 'novo', ?)");
     if (!$stmt) {
