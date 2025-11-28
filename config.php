@@ -4,11 +4,12 @@ if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set(getenv('APP_TZ') ?: 'America/Sao_Paulo');
 }
 
-// Credenciais do banco via variáveis de ambiente
-$db_server = getenv('DB_HOST') ?: '';
-$db_user   = getenv('DB_USER') ?: '';
+// Credenciais do banco via variáveis de ambiente com padrões para XAMPP/MySQL
+// Padrões: host=localhost, user=root, pass="", db=eva
+$db_server = getenv('DB_HOST') ?: 'localhost';
+$db_user   = getenv('DB_USER') ?: 'root';
 $db_pass   = getenv('DB_PASS') ?: '';
-$db_name   = getenv('DB_NAME') ?: '';
+$db_name   = getenv('DB_NAME') ?: 'eva';
 
 if (!defined('DB_SERVER')) { define('DB_SERVER', $db_server); }
 if (!defined('DB_USERNAME')) { define('DB_USERNAME', $db_user); }

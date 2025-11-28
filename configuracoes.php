@@ -98,6 +98,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['twofa_enabled'] = $enable;
             }
             $mensagens[] = ['tipo' => 'sucesso', 'texto' => $enable ? 'Autenticação em duas etapas ativada.' : 'Autenticação em duas etapas desativada.'];
+        } elseif ($acao === 'deletar_conta') {
+            $confirm = $_POST['confirmacao'] ?? '';
+            if ($confirm !== 'DELETAR') {
+                $mensagens[] = ['tipo' => 'erro', 'texto' => 'Confirmação inválida. Digite DELETAR para confirmar.'];
+            } else {
+                // Remove o usuário do banco
+                $ok = false;
+                if ($stmt = $conexao->prepare('DELETE FROM usuarios WHERE id = ?')) {
+                    $stmt->bind_param('i', $usuarioId);
+                    $ok = $stmt->execute();
+                    $stmt->close();
+                }
+                if ($ok) {
+                    // Encerra a sessão e redireciona
+                    session_unset();
+                    session_destroy();
+                    if (!headers_sent()) {
+                        header('Location: index.php');
+                        exit;
+                    }
+                } else {
+                    $mensagens[] = ['tipo' => 'erro', 'texto' => 'Não foi possível deletar sua conta.'];
+                }
+            }
         }
     }
 }
@@ -243,6 +267,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span>Você poderá reenviar o código após 1 minuto, se necessário.</span>
                         </div>
                     </div>
+                    <hr style="margin:18px 0">
+                    <div style="margin-bottom:14px">
+                        <h3 style="margin:0 0 6px;font-size:16px;color:#c0392b">Excluir Conta</h3>
+                        <p style="margin:0;color:#7f8c8d;font-size:13px">Esta ação é permanente e removerá seu perfil imediatamente.</p>
+                    </div>
+                    <form method="POST" action="configuracoes.php#perfil-usuario" onsubmit="return confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.');">
+                        <input type="hidden" name="acao" value="deletar_conta">
+                        <div class="form-group" style="display:block">
+                            <label>Digite <strong>DELETAR</strong> para confirmar</label>
+                            <input type="text" name="confirmacao" placeholder="DELETAR" required>
+                        </div>
+                        <div class="form-group" style="display:block">
+                            <button type="submit" class="btn-submit" style="background:#e74c3c;border-color:#e74c3c;color:#fff;width:auto;padding:8px 12px;font-size:14px">Excluir minha conta</button>
+                        </div>
+                    </form>
                 </div>
             </details>
         </section>

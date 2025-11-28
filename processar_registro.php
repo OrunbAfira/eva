@@ -58,10 +58,9 @@ if ($resultado->num_rows > 0) {
 $stmt_check->close();
 
 $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
-$data_aceite = date('Y-m-d H:i:s'); // Pega a data e hora atuais
-
-$stmt = $conexao->prepare("INSERT INTO usuarios (nome, email, senha, termos_aceitos_em) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("ssss", $nome, $email, $senha_hash, $data_aceite);
+// Alguns bancos podem não ter a coluna `termos_aceitos_em`. Inserimos apenas colunas existentes.
+$stmt = $conexao->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
+$stmt->bind_param("sss", $nome, $email, $senha_hash);
 
 if ($stmt->execute()) {
     $stmt->close();
