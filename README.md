@@ -57,3 +57,7 @@ Se pedir autenticação, use PAT (token) em vez de senha.
 - Adicionar testes básicos.
 - Implementar página de health check.
 - Revisar regras de risco e índices no banco para performance.
+
+## Atualização
+
+Pequena atualização de documentação para validar o fluxo de push.
