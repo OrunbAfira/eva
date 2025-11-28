@@ -1,4 +1,8 @@
 <?php
+// Processa redefinição de senha:
+// - Valida token (formato, expiração, não utilizado)
+// - Atualiza senha com hash seguro e invalida o token (transação)
+// - Respostas genéricas para não expor detalhes
 require_once __DIR__ . '/config.php';
 
 function page($titulo, $html) {
@@ -13,17 +17,20 @@ $token = trim($_POST['token'] ?? '');
 $senha = $_POST['senha'] ?? '';
 $confirmar = $_POST['confirmar'] ?? '';
 
+// Token deve ser hex de 64 chars (gerado com random_bytes)
 if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
     page('Link inválido', '<h1>Link inválido</h1><p>O link de redefinição é inválido.</p><a class="btn" href="index.php">Voltar ao login</a>');
     exit;
 }
 
+// Regras mínimas de senha e confirmação
 if (strlen($senha) < 6 || $senha !== $confirmar) {
     page('Dados inválidos', '<h1>Dados inválidos</h1><p>Verifique a senha informada e a confirmação.</p><a class="btn" href="' . 'redefinir_senha.php?token=' . urlencode($token) . '">Voltar</a>');
     exit;
 }
 
 $email = null; $expires_at = null; $used = 1; $tokenOk = false;
+// Busca token: precisa estar válido (não usado e não expirado)
 if ($conexao instanceof mysqli) {
     if ($stmt = $conexao->prepare('SELECT email, expires_at, used FROM recuperacao_senha WHERE token = ? LIMIT 1')) {
         $stmt->bind_param('s', $token);
@@ -37,16 +44,18 @@ if ($conexao instanceof mysqli) {
     }
 }
 
+// Feedback genérico para não vazar existência/estado
 if (!$tokenOk || !$email) {
     page('Link inválido ou expirado', '<h1>Link inválido ou expirado</h1><p>Solicite uma nova recuperação.</p><a class="btn" href="esqueci_senha.php">Solicitar novamente</a>');
     exit;
 }
 
+// Hash seguro com algoritmo padrão
 $hash = password_hash($senha, PASSWORD_DEFAULT);
 
 $conexao->begin_transaction();
 try {
-    // Atualiza senha do usuário
+    // Atualiza senha do usuário (prepared statement)
     if ($stmt = $conexao->prepare('UPDATE usuarios SET senha = ? WHERE email = ? LIMIT 1')) {
         $stmt->bind_param('ss', $hash, $email);
         if (!$stmt->execute() || $stmt->affected_rows < 1) { throw new Exception('Falha ao atualizar senha'); }
@@ -60,14 +69,16 @@ try {
         $stmt2->close();
     } else { throw new Exception('Falha ao preparar invalidacao token'); }
 
-    // (Opcional) remover tokens antigos do mesmo email
+    // Remove tokens antigos e usados (higienização)
     $conexao->query("DELETE FROM recuperacao_senha WHERE email = '" . $conexao->real_escape_string($email) . "' AND used = 1 AND expires_at < NOW() - INTERVAL 7 DAY");
 
+    // Conclui transação
     $conexao->commit();
     page('Senha redefinida', '<h1>Senha redefinida</h1><p>Sua senha foi atualizada com sucesso.</p><a class="btn" href="index.php">Ir para o login</a>');
     exit;
 } catch (Throwable $e) {
     $conexao->rollback();
+    // Mensagem genérica de erro
     page('Erro', '<h1>Erro</h1><p>Não foi possível concluir a redefinição agora. Tente novamente.</p><a class="btn" href="index.php">Voltar</a>');
     exit;
 }

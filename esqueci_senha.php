@@ -1,3 +1,6 @@
+<!-- Página de solicitação de recuperação de senha
+    Política: resposta sempre genérica para evitar enumeração de usuários.
+    Processamento realizado em processar_esqueci_senha.php. -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>

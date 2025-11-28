@@ -1,6 +1,7 @@
 <?php
-// Handler para envio de e-mail ao solicitar recuperação de senha
-// Politica: não revelar se o e-mail existe; resposta sempre positiva.
+// Solicitação de recuperação de senha:
+// - Política: não revelar se o e-mail existe (resposta genérica)
+// - Gera token sempre, grava apenas se usuário existir
 
 // Opcional: usar conexão caso queira verificar existência sem expor (não obrigatório)
 require_once __DIR__ . '/config.php';
@@ -11,7 +12,7 @@ require_once __DIR__ . '/config.php';
 // SMTP mínimo sem Composer
 @require_once __DIR__ . '/lib/smtp_send.php';
 
-// Função utilitária para renderizar uma página simples de resposta
+// Renderização de resposta simples (HTML sanitizado)
 function renderizarResposta($titulo, $mensagem, $link = 'index.php', $linkTexto = 'Voltar ao login') {
     echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">';
     echo '<title>' . htmlspecialchars($titulo) . '</title>';
@@ -26,7 +27,7 @@ function renderizarResposta($titulo, $mensagem, $link = 'index.php', $linkTexto 
     echo '</div></body></html>';
 }
 
-// Sanitização e validação
+// Sanitização e validação de e-mail
 $email = trim($_POST['email'] ?? '');
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     renderizarResposta('Solicitação inválida', 'O e-mail informado é inválido. Por favor, tente novamente.', 'esqueci_senha.php', 'Voltar');
@@ -34,7 +35,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 
-// Verifica se usuário existe
+// Verifica se usuário existe (sem alterar resposta ao usuário)
 $usuarioExiste = false;
 if ($conexao instanceof mysqli) {
     if ($stmt = $conexao->prepare('SELECT id FROM usuarios WHERE email = ? LIMIT 1')) {
@@ -47,7 +48,7 @@ if ($conexao instanceof mysqli) {
     }
 }
 
-// Gera token (sempre gera para não expor existência) e salva apenas se usuário existir
+// Gera token sempre; só persiste se usuário existir
 $token = bin2hex(random_bytes(32));
 $expiraEm = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
 if ($usuarioExiste && $conexao instanceof mysqli) {
@@ -84,7 +85,7 @@ $headers[] = 'Reply-To: no-reply@localhost';
 $headers[] = 'X-Mailer: PHP/' . phpversion();
 $headersStr = implode("\r\n", $headers);
 
-// Política de envio
+// Política de envio (opcionalmente só envia se usuário existir)
 $podeEnviar = true;
 if (defined('SMTP_SEND_ONLY_IF_USER_EXISTS') && SMTP_SEND_ONLY_IF_USER_EXISTS === true) {
     if (!$usuarioExiste) { $podeEnviar = false; }
@@ -128,9 +129,9 @@ if ($podeEnviar) {
     }
 }
 
-// Removido fallback de desenvolvimento que salvava pré-visualização em assets/debug/last_email.html
+// Sem salvar prévias de e-mail em disco (evita vazamento)
 
-// Resposta sempre genérica por segurança
+// Resposta genérica por segurança
 renderizarResposta(
     'Se houver uma conta, você receberá um e-mail',
     'Se este e-mail estiver cadastrado, enviaremos instruções.',

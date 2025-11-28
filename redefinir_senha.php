@@ -1,4 +1,7 @@
 <?php
+// Página de redefinição:
+// - Exibe formulário apenas para token válido e ativo
+// - Processamento final ocorre em processar_redefinir_senha.php
 require_once __DIR__ . '/config.php';
 
 function page($titulo, $html) {
@@ -9,13 +12,16 @@ function page($titulo, $html) {
     echo '<div class="card">' . $html . '</div></body></html>';
 }
 
+// Token fornecido via querystring
 $token = $_GET['token'] ?? '';
 $token = trim($token);
+// Token deve ser hex de 64 chars
 if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
     page('Link inválido', '<h1>Link inválido</h1><p>O link de redefinição é inválido ou foi alterado.</p><a class="btn" href="index.php">Voltar ao login</a>');
     exit;
 }
 
+// Verifica validade do token (não usado e não expirado)
 $valido = false;
 $email = null;
 if ($conexao instanceof mysqli) {
@@ -31,11 +37,13 @@ if ($conexao instanceof mysqli) {
     }
 }
 
+// Feedback genérico caso token inválido/expirado
 if (!$valido) {
     page('Link inválido ou expirado', '<h1>Link inválido ou expirado</h1><p>Solicite uma nova recuperação de senha.</p><a class="btn" href="esqueci_senha.php">Solicitar novamente</a>');
     exit;
 }
 
+// Formulário: senha mínima e confirmação; token enviado oculto
 $form = '<h1>Redefinir senha</h1>' .
     '<form method="POST" action="processar_redefinir_senha.php">' .
     '<input type="hidden" name="token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">' .
