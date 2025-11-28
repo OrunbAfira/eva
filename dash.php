@@ -110,36 +110,7 @@ $stmt->close();
 
 $mensagem_regra = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'nova_regra') {
-        $nome_regra = $_POST['nome_regra'] ?? '';
-        $descricao = $_POST['descricao'] ?? '';
-        $pontos = $_POST['pontos'] ?? 0;
-        
-        if (!empty($nome_regra) && $pontos > 0) {
-            $stmt_check = $conexao->prepare("SELECT id FROM regras_risco WHERE nome_regra = ?");
-            $stmt_check->bind_param("s", $nome_regra);
-            $stmt_check->execute();
-            $result_check = $stmt_check->get_result();
-            
-            if ($result_check->num_rows > 0) {
-                $mensagem_regra = "<div class='mensagem erro'>Já existe um critério com este nome. Escolha um nome diferente.</div>";
-            } else {
-                $stmt = $conexao->prepare("INSERT INTO regras_risco (nome_regra, descricao, pontos) VALUES (?, ?, ?)");
-                $stmt->bind_param("ssi", $nome_regra, $descricao, $pontos);
-                
-                if ($stmt->execute()) {
-                    $mensagem_regra = "<div class='mensagem sucesso'>Critério de avaliação criado com sucesso!</div>";
-                    $_POST = [];
-                } else {
-                    $mensagem_regra = "<div class='mensagem erro'>Erro ao criar critério de avaliação.</div>";
-                }
-                $stmt->close();
-            }
-            $stmt_check->close();
-        } else {
-            $mensagem_regra = "<div class='mensagem erro'>Nome do critério e pontos são obrigatórios. Pontos devem ser maior que zero.</div>";
-        }
-    } elseif ($_POST['action'] === 'toggle_regra') {
+    if ($_POST['action'] === 'toggle_regra') {
         // Validação rigorosa dos inputs
         $regra_id = filter_var($_POST['regra_id'] ?? 0, FILTER_VALIDATE_INT);
         $novo_status = filter_var($_POST['novo_status'] ?? 0, FILTER_VALIDATE_INT);
@@ -352,35 +323,7 @@ $stmt->close();
 
             <?php echo $mensagem_regra; ?>
 
-            <!-- Formulário para Nova Regra -->
-            <div class="form-container">
-                <h3>Adicionar Novo Critério</h3>
-                <form action="dash.php#regras-criterios" method="POST">
-                    <input type="hidden" name="action" value="nova_regra">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nome_regra">Nome do Critério *</label>
-                            <input type="text" id="nome_regra" name="nome_regra" 
-                                   value="<?php echo htmlspecialchars($_POST['nome_regra'] ?? ''); ?>"
-                                   placeholder="Ex: Faltas Excessivas" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="pontos">Pontos de Risco *</label>
-                            <input type="number" id="pontos" name="pontos" min="1" max="50" 
-                                   value="<?php echo htmlspecialchars($_POST['pontos'] ?? ''); ?>"
-                                   placeholder="Ex: 15" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="descricao">Descrição</label>
-                        <textarea id="descricao" name="descricao" rows="2" 
-                                  placeholder="Descreva quando este critério deve ser aplicado..."><?php echo htmlspecialchars($_POST['descricao'] ?? ''); ?></textarea>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn-submit">Criar Critério</button>
-                    </div>
-                </form>
-            </div>
+            <!-- Formulário migrado para alertas.php -->
 
             <!-- Lista de Regras Existentes -->
             <div class="table-container">

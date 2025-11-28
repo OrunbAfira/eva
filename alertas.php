@@ -6,25 +6,57 @@ require_once 'config.php';
 require_once 'risk_functions.php';
 
 $nome_usuario = $_SESSION['usuario_nome'];
-$mensagem = '';
+$mensagem = '';// mensagem de alerta
+$mensagem_regra = '';// mensagem de criação de critério
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $aluno_id = $_POST['aluno_id'] ?? 0;
-    $regra_id = $_POST['regra_id'] ?? 0;
-    $observacoes = $_POST['observacoes'] ?? '';
-    
-    if ($aluno_id && $regra_id) {
-        $stmt = $conexao->prepare("SELECT pontos FROM regras_risco WHERE id = ?");
-        $stmt->bind_param("i", $regra_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $pontos = $result->fetch_assoc()['pontos'];
-        $stmt->close();
-        
-        if (adicionarAlerta($conexao, $aluno_id, $regra_id, $pontos, $observacoes)) {
-            $mensagem = "<div class='mensagem sucesso'>Alerta adicionado com sucesso!</div>";
+    $action = $_POST['action'] ?? 'novo_alerta';
+    if ($action === 'nova_regra') {
+        $nome_regra = $_POST['nome_regra'] ?? '';
+        $descricao = $_POST['descricao'] ?? '';
+        $pontos = (int)($_POST['pontos'] ?? 0);
+        if ($nome_regra !== '' && $pontos > 0) {
+            $stmt_check = $conexao->prepare("SELECT id FROM regras_risco WHERE nome_regra = ?");
+            $stmt_check->bind_param("s", $nome_regra);
+            $stmt_check->execute();
+            $result_check = $stmt_check->get_result();
+            if ($result_check->num_rows > 0) {
+                $mensagem_regra = "<div class='mensagem erro'>Já existe um critério com este nome.</div>";
+            } else {
+                $stmt_ins = $conexao->prepare("INSERT INTO regras_risco (nome_regra, descricao, pontos) VALUES (?, ?, ?)");
+                $stmt_ins->bind_param("ssi", $nome_regra, $descricao, $pontos);
+                if ($stmt_ins->execute()) {
+                    $mensagem_regra = "<div class='mensagem sucesso'>Critério criado com sucesso!</div>";
+                    // Limpa campos para evitar re-envio
+                    unset($_POST['nome_regra'], $_POST['descricao'], $_POST['pontos']);
+                } else {
+                    $mensagem_regra = "<div class='mensagem erro'>Erro ao criar critério.</div>";
+                }
+                $stmt_ins->close();
+            }
+            $stmt_check->close();
         } else {
-            $mensagem = "<div class='mensagem erro'>Erro ao adicionar alerta.</div>";
+            $mensagem_regra = "<div class='mensagem erro'>Nome e pontos (>0) são obrigatórios.</div>";
+        }
+    } else { // novo alerta
+        $aluno_id = (int)($_POST['aluno_id'] ?? 0);
+        $regra_id = (int)($_POST['regra_id'] ?? 0);
+        $observacoes = $_POST['observacoes'] ?? '';
+        if ($aluno_id && $regra_id) {
+            $stmt = $conexao->prepare("SELECT pontos FROM regras_risco WHERE id = ?");
+            $stmt->bind_param("i", $regra_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $pontos = $result->fetch_assoc()['pontos'] ?? 0;
+            $stmt->close();
+            if (adicionarAlerta($conexao, $aluno_id, $regra_id, $pontos, $observacoes)) {
+                $mensagem = "<div class='mensagem sucesso'>Alerta adicionado com sucesso!</div>";
+                unset($_POST['aluno_id'], $_POST['regra_id'], $_POST['observacoes']);
+            } else {
+                $mensagem = "<div class='mensagem erro'>Erro ao adicionar alerta.</div>";
+            }
+        } else {
+            $mensagem = "<div class='mensagem erro'>Aluno e regra são obrigatórios.</div>";
         }
     }
 }
@@ -42,9 +74,7 @@ $regras = [];
 $stmt = $conexao->prepare("SELECT id, nome_regra, pontos, descricao FROM regras_risco WHERE ativo = 1 ORDER BY nome_regra");
 $stmt->execute();
 $result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $regras[] = $row;
-}
+while ($row = $result->fetch_assoc()) { $regras[] = $row; }
 $stmt->close();
 
 $alertas_recentes = [];
@@ -105,6 +135,7 @@ $stmt->close();
 
             <div class="form-container">
                 <form action="alertas.php" method="POST">
+                    <input type="hidden" name="action" value="novo_alerta">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="aluno_id">Aluno *</label>
@@ -138,6 +169,36 @@ $stmt->close();
                     
                     <div class="form-group">
                         <button type="submit" class="btn-submit">Adicionar Alerta</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Formulário de Novo Critério (migrado do dashboard) -->
+        <section class="widget">
+            <div class="widget-header">
+                <h2>Adicionar Novo Critério</h2>
+            </div>
+            <?php echo $mensagem_regra; ?>
+            <div class="form-container">
+                <form action="alertas.php#" method="POST">
+                    <input type="hidden" name="action" value="nova_regra">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome_regra">Nome do Critério *</label>
+                            <input type="text" id="nome_regra" name="nome_regra" value="<?php echo htmlspecialchars($_POST['nome_regra'] ?? ''); ?>" placeholder="Ex: Faltas Excessivas" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pontos">Pontos de Risco *</label>
+                            <input type="number" id="pontos" name="pontos" min="1" max="50" value="<?php echo htmlspecialchars($_POST['pontos'] ?? ''); ?>" placeholder="Ex: 15" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <textarea id="descricao" name="descricao" rows="2" placeholder="Descreva quando este critério deve ser aplicado..."><?php echo htmlspecialchars($_POST['descricao'] ?? ''); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn-submit">Criar Critério</button>
                     </div>
                 </form>
             </div>
