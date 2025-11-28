@@ -8,20 +8,47 @@
 
 # Debug
 assets/debug/
+############################
+# Gitignore para projeto EVA
+# Evita subir logs, credenciais e artefatos locais
+############################
+
+# Logs
 *.log
+assets/debug/
+assets/debug/*
 
-# Composer vendor (if later added)
+# Arquivos de ambiente/segurança
+.env
+.env.*
+.env.local
+
+# Diretórios de IDE/editor
+.vscode/
+.idea/
+
+# Sistema operacional
+Thumbs.db
+.DS_Store
+
+# Dependências/artefatos (se aplicável)
 vendor/
-
-# Node modules (if later added)
+composer.lock
 node_modules/
 
-# OS/editor files
-.DS_Store
 Thumbs.db
-*.log# Arquivos de sistema
-.DS_Store
-Thumbs.db
+tmp/
+cache/
+*.tmp
+
+# Relatórios e dumps
+*.sql
+*.dump
+*.bak
+
+# Arquivos específicos do projeto
+assets/debug/smtp_log.txt
+lib/*-test.php
 
 # IDEs
 .vscode/
