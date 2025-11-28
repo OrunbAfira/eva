@@ -8,7 +8,7 @@ require_once 'config.php'; // Inclui a configuração do banco de dados
 if ($conexao->connect_error) {
     die('Erro de conexão: ' . $conexao->connect_error);
 }
-//
+
 // --- INÍCIO DA LÓGICA DE LOG ---
 function log_login_attempt($email, $status) {
     $log_file = __DIR__ . '/assets/debug/login_attempts.log';
