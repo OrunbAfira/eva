@@ -1,9 +1,10 @@
 <?php
+// Página de verificação 2FA: exige sessão iniciada e 2FA pendente
 session_start();
 require_once __DIR__ . '/session_guard.php';
 require_once __DIR__ . '/config.php';
 
-// Se não há 2FA pendente, ir para dashboard
+// Se não houver 2FA pendente, vai para a dashboard
 if (empty($_SESSION['twofa_pending']) || empty($_SESSION['usuario_id'])) {
     header('Location: dash.php');
     exit;
@@ -30,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } elseif ($acao === 'reenviar') {
-        // Rate limit: permitir reenviar apenas após 60s
+        // Rate limit simples: só permite reenviar após 60s
         $agora = time();
         $ultimoEnvio = $_SESSION['twofa_last_sent'] ?? 0;
         if ($agora - (int)$ultimoEnvio < 60) {
             $restante = 60 - ($agora - (int)$ultimoEnvio);
             $erro = 'Aguarde ' . $restante . 's para reenviar o código.';
         } else {
-            // Regerar e reenviar código
+            // Regenera e reenviando código
             $codigo = random_int(100000, 999999);
             $_SESSION['twofa_code'] = $codigo;
             $_SESSION['twofa_expires'] = $agora + 300;
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nome = $_SESSION['usuario_nome'] ?? 'Usuário';
             $emailDestino = $_SESSION['twofa_email'] ?? '';
             if (!$emailDestino) {
-                // Buscar do banco
+                // Busca e-mail do banco como fallback
                 $emailDestino = '';
                 if (isset($_SESSION['usuario_id'])) {
                     $stmt = $conexao->prepare('SELECT email FROM usuarios WHERE id = ? LIMIT 1');

@@ -1,5 +1,5 @@
 <?php
-// Envio SMTP mínimo com STARTTLS e AUTH LOGIN, com log opcional
+// Cliente SMTP minimalista com STARTTLS/SSL e AUTH LOGIN
 
 function smtp_send($to, $subject, $html, $from, $fromName, $host, $port, $username, $password, $encryption = 'tls', $timeout = 30)
 {
@@ -83,11 +83,11 @@ function smtp_send($to, $subject, $html, $from, $fromName, $host, $port, $userna
         if (!$send('EHLO localhost') || !$expect([250])) { fclose($fp); $log('Erro: EHLO pós-TLS'); return false; }
     }
 
-    // AUTH LOGIN
+    // Autenticação: AUTH LOGIN (evita expor credenciais nos logs)
     if (!$send('AUTH LOGIN') || !$expect([334])) { fclose($fp); $log('Erro: AUTH LOGIN'); return false; }
     if (!$send($uEnc) || !$expect([334])) { fclose($fp); $log('Erro: USERNAME'); return false; }
     if (!$send($pEnc) || !$expect([235])) {
-        $log('Falha primária de autenticação (LOGIN). Tentando fallback Brevo com username "apikey"...');
+        $log('Falha de autenticação. Tentando fallback Brevo com username "apikey"...');
         if ($send('AUTH LOGIN') && $expect([334])) {
             $altUserEnc = base64_encode('apikey');
             if ($send($altUserEnc) && $expect([334]) && $send($pEnc) && $expect([235])) {
@@ -104,12 +104,12 @@ function smtp_send($to, $subject, $html, $from, $fromName, $host, $port, $userna
         }
     }
 
-    // MAIL FROM / RCPT TO
+    // Endereçamento MAIL FROM / RCPT TO
     $fromAddr = $from ?: $username;
     if (!$send('MAIL FROM:<' . $fromAddr . '>') || !$expect([250])) { fclose($fp); $log('Erro: MAIL FROM'); return false; }
     if (!$send('RCPT TO:<' . $to . '>') || !$expect([250,251])) { fclose($fp); $log('Erro: RCPT TO'); return false; }
 
-    // DATA
+    // DATA (início do corpo da mensagem)
     if (!$send('DATA') || !$expect([354])) { fclose($fp); $log('Erro: DATA'); return false; }
 
     // Headers + body
