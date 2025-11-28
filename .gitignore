@@ -1,13 +1,14 @@
-# Environment files
+# Environment
 .env
 .env.*
+!.env.example
 
 # Local config overrides
 *.local.php
 
-# Debug/preview artifacts
+# Debug
 assets/debug/
-assets/debug/*
+*.log
 
 # Composer vendor (if later added)
 vendor/

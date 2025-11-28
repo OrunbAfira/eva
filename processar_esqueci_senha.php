@@ -128,24 +128,12 @@ if ($podeEnviar) {
     }
 }
 
-if (!$enviado) {
-    // Fallback de desenvolvimento: grava última mensagem em HTML para inspecionar
-    $debugDir = __DIR__ . '/assets/debug';
-    if (!is_dir($debugDir)) {
-        @mkdir($debugDir, 0777, true);
-    }
-    $preview = '<h2>Pré-visualização de e-mail (ambiente sem SMTP)</h2>' .
-        '<p><strong>Para:</strong> ' . htmlspecialchars($email) . '</p>' .
-        '<p><strong>Assunto:</strong> ' . htmlspecialchars($assunto) . '</p>' .
-        '<hr>' . $mensagemHtml;
-    @file_put_contents($debugDir . '/last_email.html', $preview);
-}
+// Removido fallback de desenvolvimento que salvava pré-visualização em assets/debug/last_email.html
 
 // Resposta sempre genérica por segurança
 renderizarResposta(
     'Se houver uma conta, você receberá um e-mail',
-    'Se este e-mail estiver cadastrado, enviaremos instruções. ' .
-    (!$enviado ? '<span class="hint">(Ambiente de desenvolvimento: a última pré-visualização foi salva em <code>assets/debug/last_email.html</code>.)</span>' : ''),
+    'Se este e-mail estiver cadastrado, enviaremos instruções.',
     'index.php',
     'Voltar ao login'
 );

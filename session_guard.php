@@ -10,6 +10,13 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
+// Se 2FA está pendente, redireciona para verificação (exceto já lá)
+$current = basename($_SERVER['PHP_SELF'] ?? '');
+if (!empty($_SESSION['twofa_pending']) && $current !== 'verificar_2fa.php') {
+    header('Location: verificar_2fa.php');
+    exit;
+}
+
 $now = time();
 if (isset($_SESSION['last_activity'])) {
     $inativo = $now - (int)$_SESSION['last_activity'];

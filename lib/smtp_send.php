@@ -86,7 +86,23 @@ function smtp_send($to, $subject, $html, $from, $fromName, $host, $port, $userna
     // AUTH LOGIN
     if (!$send('AUTH LOGIN') || !$expect([334])) { fclose($fp); $log('Erro: AUTH LOGIN'); return false; }
     if (!$send($uEnc) || !$expect([334])) { fclose($fp); $log('Erro: USERNAME'); return false; }
-    if (!$send($pEnc) || !$expect([235])) { fclose($fp); $log('Erro: PASSWORD'); return false; }
+    if (!$send($pEnc) || !$expect([235])) {
+        $log('Falha primária de autenticação (LOGIN). Tentando fallback Brevo com username "apikey"...');
+        if ($send('AUTH LOGIN') && $expect([334])) {
+            $altUserEnc = base64_encode('apikey');
+            if ($send($altUserEnc) && $expect([334]) && $send($pEnc) && $expect([235])) {
+                $log('Fallback Brevo (apikey) bem-sucedido.');
+            } else {
+                fclose($fp);
+                $log('Erro: PASSWORD (após fallback apikey)');
+                return false;
+            }
+        } else {
+            fclose($fp);
+            $log('Erro: AUTH LOGIN (falha também no fallback apikey)');
+            return false;
+        }
+    }
 
     // MAIL FROM / RCPT TO
     $fromAddr = $from ?: $username;

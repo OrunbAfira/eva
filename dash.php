@@ -209,11 +209,11 @@ $stmt->close();
     <nav class="sidebar">
         <div class="logo">EVA</div>
         <div class="nav-menu">
-            <a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a>
+            <a href="dash.php" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a>
             <a href="alunos.php"><i class='bx bxs-user-detail'></i> Alunos</a>
             <a href="alertas.php"><i class='bx bxs-bell'></i> Alertas</a>
-            <a href="#"><i class='bx bxs-report'></i> Relatórios</a>
-            <a href="#"><i class='bx bxs-cog'></i> Configurações</a>
+            <a href="relatorios.php"><i class='bx bxs-report'></i> Relatórios</a>
+            <a href="configuracoes.php"><i class='bx bxs-cog'></i> Configurações</a>
         </div>
         <div class="user-profile">
             <p><strong><?php echo htmlspecialchars($nome_usuario); ?></strong></p>
