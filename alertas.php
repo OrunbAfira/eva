@@ -109,6 +109,7 @@ $stmt->close();
         <div class="nav-menu">
             <a href="dash.php"><i class='bx bxs-dashboard'></i> Dashboard</a>
             <a href="alunos.php"><i class='bx bxs-user-detail'></i> Alunos</a>
+            <a href="turmas.php"><i class='bx bxs-group'></i> Turmas</a>
             <a href="alertas.php" class="active"><i class='bx bxs-bell'></i> Alertas</a>
             <a href="relatorios.php"><i class='bx bxs-report'></i> Relatórios</a>
             <a href="configuracoes.php"><i class='bx bxs-cog'></i> Configurações</a>
