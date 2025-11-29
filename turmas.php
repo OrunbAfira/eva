@@ -7,7 +7,7 @@ $nome_usuario = $_SESSION['usuario_nome'] ?? 'Usuário';
 
 // Agrupa alunos por turma usando o campo texto existente
 $turmas = [];
-$stmt = $conexao->prepare("SELECT turma, id, nome_completo, ra_matricula, email FROM alunos ORDER BY turma, nome_completo");
+$stmt = $conexao->prepare("SELECT turma, id, nome_completo, ra_matricula, email, pontuacao_risco, nivel_risco FROM alunos ORDER BY turma, nome_completo");
 $stmt->execute();
 $res = $stmt->get_result();
 while ($row = $res->fetch_assoc()) {
@@ -70,7 +70,10 @@ $stmt->close();
         </div>
       </section>
     <?php else: ?>
-      <?php $selecionada = $_GET['t'] ?? ''; ?>
+      <?php 
+        $selecionadasParam = $_GET['t'] ?? '';
+        $selecionadas = array_filter(array_map('trim', explode(',', $selecionadasParam)));
+      ?>
       <section class="widget">
         <div class="widget-header">
           <h2>Turmas</h2>
@@ -82,7 +85,7 @@ $stmt->close();
         </div>
         <div class="turmas-grid">
           <?php foreach ($turmas as $nomeTurma => $alunosTurma): ?>
-            <?php $isActive = ($selecionada === $nomeTurma) ? ' active' : ''; ?>
+            <?php $isActive = (in_array($nomeTurma, $selecionadas)) ? ' active' : ''; ?>
             <button class="turma-card<?php echo $isActive; ?>" type="button" data-turma="<?php echo htmlspecialchars($nomeTurma); ?>">
               <span class="turma-name"><?php echo htmlspecialchars($nomeTurma); ?></span>
               <span class="badge"><?php echo count($alunosTurma); ?></span>
@@ -91,11 +94,46 @@ $stmt->close();
         </div>
       </section>
 
-      <?php if ($selecionada && isset($turmas[$selecionada])): ?>
+      <?php if (!empty($selecionadas)): ?>
+        <?php 
+          // agregação de alunos das turmas selecionadas
+          $alunosSelecionados = [];
+          foreach ($selecionadas as $tSel) {
+            if (isset($turmas[$tSel])) {
+              foreach ($turmas[$tSel] as $al) { $alunosSelecionados[] = $al; }
+            }
+          }
+          // calcula maior ofensor geral dentre selecionados
+          $maiorOfensor = null;
+          foreach ($alunosSelecionados as $al) {
+            if ($maiorOfensor === null || ((int)($al['pontuacao_risco'] ?? 0)) > (int)($maiorOfensor['pontuacao_risco'] ?? 0)) {
+              $maiorOfensor = $al;
+            }
+          }
+        ?>
         <section class="widget">
           <div class="widget-header">
-            <h2><?php echo htmlspecialchars($selecionada); ?></h2>
-            <span class="badge"><?php echo count($turmas[$selecionada]); ?> aluno(s)</span>
+            <h2>Turmas selecionadas</h2>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+              <span class="badge" title="Turmas">Turmas: <?php echo count($selecionadas); ?></span>
+              <span class="badge" title="Alunos">Alunos: <?php echo count($alunosSelecionados); ?></span>
+              <?php if ($maiorOfensor): ?>
+                <span class="badge" title="Maior ofensor" style="background:#ffe8e6;color:#9f2d20">
+                  Maior ofensor: <?php echo htmlspecialchars($maiorOfensor['nome_completo']); ?> (<?php echo (int)$maiorOfensor['pontuacao_risco']; ?> pts)
+                </span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:-6px">
+            <label for="sortAlunos" style="color:#6b7c93">Ordenar por:</label>
+            <select id="sortAlunos" class="search-input" style="max-width:240px">
+              <option value="nome_asc">Nome (A-Z)</option>
+              <option value="nome_desc">Nome (Z-A)</option>
+              <option value="pontos_desc">Pontos (maior primeiro)</option>
+              <option value="pontos_asc">Pontos (menor primeiro)</option>
+              <option value="nivel_desc">Nível (alto→baixo)</option>
+              <option value="nivel_asc">Nível (baixo→alto)</option>
+            </select>
           </div>
           <div class="table-container">
             <table>
@@ -104,23 +142,52 @@ $stmt->close();
                   <th>Aluno</th>
                   <th>Matrícula</th>
                   <th>E-mail</th>
+                  <th>Pontos</th>
+                  <th>Nível</th>
+                  <th>Maior Ofensor</th>
                 </tr>
               </thead>
-              <tbody>
-                <?php foreach ($turmas[$selecionada] as $al): ?>
-                  <tr class="aluno-row" data-busca="<?php echo htmlspecialchars(strtolower(($al['nome_completo'] ?? '') . ' ' . ($al['ra_matricula'] ?? '') . ' ' . ($al['email'] ?? ''))); ?>">
+              <tbody id="alunosSelecionadosBody">
+                <?php foreach ($alunosSelecionados as $al): ?>
+                  <tr class="aluno-row" 
+                      data-busca="<?php echo htmlspecialchars(strtolower(($al['nome_completo'] ?? '') . ' ' . ($al['ra_matricula'] ?? '') . ' ' . ($al['email'] ?? ''))); ?>"
+                      data-nome="<?php echo htmlspecialchars(strtolower($al['nome_completo'] ?? '')); ?>"
+                      data-pontos="<?php echo (int)($al['pontuacao_risco'] ?? 0); ?>"
+                      data-nivel="<?php echo htmlspecialchars(strtolower($al['nivel_risco'] ?? 'neutro')); ?>">
                     <td><?php echo htmlspecialchars($al['nome_completo']); ?></td>
                     <td><?php echo htmlspecialchars($al['ra_matricula']); ?></td>
                     <td><?php echo htmlspecialchars($al['email'] ?? '-'); ?></td>
+                    <td><?php echo (int)($al['pontuacao_risco'] ?? 0); ?></td>
+                    <td>
+                      <?php $nivel = $al['nivel_risco'] ?? 'neutro'; ?>
+                      <span class="badge" style="background:#f0f4ff;color:#3b5bdb"><?php echo htmlspecialchars(ucfirst($nivel)); ?></span>
+                    </td>
+                    <td>
+                      <?php
+                        $topOfensor = '-';
+                        if (!empty($al['id'])) {
+                          $stmtTop = $conexao->prepare("SELECT r.nome_regra, SUM(al.pontos_atribuidos) as total FROM alertas al JOIN regras_risco r ON r.id = al.regra_id WHERE al.aluno_id = ? GROUP BY r.id, r.nome_regra ORDER BY total DESC LIMIT 1");
+                          $stmtTop->bind_param("i", $al['id']);
+                          if ($stmtTop->execute()) {
+                            $resTop = $stmtTop->get_result();
+                            if ($rowTop = $resTop->fetch_assoc()) {
+                              $topOfensor = $rowTop['nome_regra'] . ' (' . (int)$rowTop['total'] . ' pts)';
+                            }
+                          }
+                          $stmtTop->close();
+                        }
+                      ?>
+                      <span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba"><?php echo htmlspecialchars($topOfensor); ?></span>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
             </table>
           </div>
         </section>
-      <?php elseif ($selecionada): ?>
+      <?php else: ?>
         <section class="widget">
-          <div class="table-container empty-note">Nenhuma turma encontrada.</div>
+          <div class="table-container empty-note">Selecione uma ou mais turmas acima para visualizar os alunos.</div>
         </section>
       <?php endif; ?>
     <?php endif; ?>
@@ -131,19 +198,27 @@ $stmt->close();
     const search = document.getElementById('search');
     const clearBtn = document.getElementById('clearSearch');
     const turmaCards = Array.from(document.querySelectorAll('.turma-card'));
+    const sortSelect = document.getElementById('sortAlunos');
     function norm(s){
       return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     }
-    function setActiveTurma(name) {
-      // Atualiza estilo ativo
-      turmaCards.forEach(c => c.classList.toggle('active', c.dataset.turma === name));
-      // Navega mantendo apenas parâmetro t (sem recarregar por busca)
+    function getSelectedFromURL(){
       const url = new URL(window.location.href);
-      url.searchParams.set('t', name);
+      const t = url.searchParams.get('t') || '';
+      return t.split(',').map(s=>s.trim()).filter(Boolean);
+    }
+    function setSelectedToURL(selected){
+      const url = new URL(window.location.href);
+      if (selected.length) url.searchParams.set('t', selected.join(',')); else url.searchParams.delete('t');
       url.searchParams.delete('q');
       window.location.href = url.toString();
     }
-    turmaCards.forEach(c => c.addEventListener('click', () => setActiveTurma(c.dataset.turma)));
+    function toggleTurma(name){
+      const sel = new Set(getSelectedFromURL());
+      if (sel.has(name)) sel.delete(name); else sel.add(name);
+      setSelectedToURL(Array.from(sel));
+    }
+    turmaCards.forEach(c => c.addEventListener('click', () => toggleTurma(c.dataset.turma)));
 
     function filterUI() {
       const raw = norm(search.value || '');
@@ -163,12 +238,36 @@ $stmt->close();
         row.classList.toggle('hidden', !match);
       });
     }
+    function sortRows() {
+      const tbody = document.getElementById('alunosSelecionadosBody');
+      if (!tbody || !sortSelect) return;
+      const rows = Array.from(tbody.querySelectorAll('.aluno-row'));
+      const byNivelRank = (nivel) => {
+        const order = { alto:3, medio:2, baixo:1, neutro:0 };
+        return order[nivel] ?? 0;
+      };
+      const val = sortSelect.value;
+      rows.sort((a,b) => {
+        if (val === 'nome_asc') return a.dataset.nome.localeCompare(b.dataset.nome);
+        if (val === 'nome_desc') return b.dataset.nome.localeCompare(a.dataset.nome);
+        if (val === 'pontos_desc') return (parseInt(b.dataset.pontos)||0) - (parseInt(a.dataset.pontos)||0);
+        if (val === 'pontos_asc') return (parseInt(a.dataset.pontos)||0) - (parseInt(b.dataset.pontos)||0);
+        if (val === 'nivel_desc') return byNivelRank(b.dataset.nivel) - byNivelRank(a.dataset.nivel);
+        if (val === 'nivel_asc') return byNivelRank(a.dataset.nivel) - byNivelRank(b.dataset.nivel);
+        return 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
     if (search) {
       search.addEventListener('input', filterUI);
       search.addEventListener('keydown', (e) => { if (e.key === 'Escape') { search.value=''; filterUI(); } });
     }
     if (clearBtn) {
       clearBtn.addEventListener('click', () => { search.value = ''; filterUI(); });
+    }
+    if (sortSelect) {
+      sortSelect.addEventListener('change', () => { sortRows(); });
+      window.addEventListener('load', () => { sortRows(); });
     }
   </script>
 </body>
