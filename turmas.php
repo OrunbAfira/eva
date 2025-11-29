@@ -25,6 +25,18 @@ $stmt->close();
   <title>Turmas - Plataforma EVA</title>
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="css/componentes/dashboard.css">
+  <style>
+    .toolbar { display:flex; gap:12px; align-items:center; margin-bottom:16px; }
+    .search-input { flex:1; padding:10px 12px; border:1px solid #ccd6dd; border-radius:8px; }
+    .turmas-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
+    .turma-card { padding:12px 14px; border:1px solid #e0e6ea; border-radius:10px; background:#fff; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition: border-color .2s, box-shadow .2s, transform .1s; }
+    .turma-card:hover { border-color:#b8c4cc; transform: translateY(-1px); }
+    .turma-card.active { border-color:#2c7be5; box-shadow:0 0 0 2px rgba(44,123,229,.15); }
+    .turma-name { font-weight:600; color:#2c3e50; }
+    .badge { background:#eef3f7; color:#334e68; border-radius:999px; padding:2px 8px; font-size:12px; }
+    .empty-note { color:#6b7c93; }
+    .hidden { display:none !important; }
+  </style>
 </head>
 <body>
   <nav class="sidebar">
@@ -58,11 +70,32 @@ $stmt->close();
         </div>
       </section>
     <?php else: ?>
-      <?php foreach ($turmas as $nomeTurma => $alunosTurma): ?>
+      <?php $selecionada = $_GET['t'] ?? ''; ?>
+      <section class="widget">
+        <div class="widget-header">
+          <h2>Turmas</h2>
+          <span class="badge"><?php echo count($turmas); ?> turma(s)</span>
+        </div>
+        <div class="toolbar">
+          <input type="text" id="search" class="search-input" placeholder="Pesquisar turma ou aluno..." autocomplete="off">
+          <button id="clearSearch" class="btn-submit" type="button">Limpar</button>
+        </div>
+        <div class="turmas-grid">
+          <?php foreach ($turmas as $nomeTurma => $alunosTurma): ?>
+            <?php $isActive = ($selecionada === $nomeTurma) ? ' active' : ''; ?>
+            <button class="turma-card<?php echo $isActive; ?>" type="button" data-turma="<?php echo htmlspecialchars($nomeTurma); ?>">
+              <span class="turma-name"><?php echo htmlspecialchars($nomeTurma); ?></span>
+              <span class="badge"><?php echo count($alunosTurma); ?></span>
+            </button>
+          <?php endforeach; ?>
+        </div>
+      </section>
+
+      <?php if ($selecionada && isset($turmas[$selecionada])): ?>
         <section class="widget">
           <div class="widget-header">
-            <h2><?php echo htmlspecialchars($nomeTurma); ?></h2>
-            <span class="badge"><?php echo count($alunosTurma); ?> aluno(s)</span>
+            <h2><?php echo htmlspecialchars($selecionada); ?></h2>
+            <span class="badge"><?php echo count($turmas[$selecionada]); ?> aluno(s)</span>
           </div>
           <div class="table-container">
             <table>
@@ -74,8 +107,8 @@ $stmt->close();
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($alunosTurma as $al): ?>
-                  <tr>
+                <?php foreach ($turmas[$selecionada] as $al): ?>
+                  <tr class="aluno-row" data-busca="<?php echo htmlspecialchars(strtolower(($al['nome_completo'] ?? '') . ' ' . ($al['ra_matricula'] ?? '') . ' ' . ($al['email'] ?? ''))); ?>">
                     <td><?php echo htmlspecialchars($al['nome_completo']); ?></td>
                     <td><?php echo htmlspecialchars($al['ra_matricula']); ?></td>
                     <td><?php echo htmlspecialchars($al['email'] ?? '-'); ?></td>
@@ -85,10 +118,51 @@ $stmt->close();
             </table>
           </div>
         </section>
-      <?php endforeach; ?>
+      <?php elseif ($selecionada): ?>
+        <section class="widget">
+          <div class="table-container empty-note">Nenhuma turma encontrada.</div>
+        </section>
+      <?php endif; ?>
     <?php endif; ?>
 
   </main>
   <script src="assets/js/session_timeout.js"></script>
+  <script>
+    const search = document.getElementById('search');
+    const clearBtn = document.getElementById('clearSearch');
+    const turmaCards = Array.from(document.querySelectorAll('.turma-card'));
+    function setActiveTurma(name) {
+      // Atualiza estilo ativo
+      turmaCards.forEach(c => c.classList.toggle('active', c.dataset.turma === name));
+      // Navega mantendo apenas parâmetro t (sem recarregar por busca)
+      const url = new URL(window.location.href);
+      url.searchParams.set('t', name);
+      url.searchParams.delete('q');
+      window.location.href = url.toString();
+    }
+    turmaCards.forEach(c => c.addEventListener('click', () => setActiveTurma(c.dataset.turma)));
+
+    function filterUI() {
+      const q = (search.value || '').trim().toLowerCase();
+      // Filtra cards de turmas por nome
+      turmaCards.forEach(c => {
+        const name = (c.dataset.turma || '').toLowerCase();
+        c.classList.toggle('hidden', q && !name.startsWith(q));
+      });
+      // Filtra linhas da tabela atual por prefixo
+      document.querySelectorAll('.aluno-row').forEach(row => {
+        const hay = row.getAttribute('data-busca') || '';
+        const starts = hay.split(' ').some(part => part.startsWith(q));
+        row.classList.toggle('hidden', q && !starts);
+      });
+    }
+    if (search) {
+      search.addEventListener('input', filterUI);
+      search.addEventListener('keydown', (e) => { if (e.key === 'Escape') { search.value=''; filterUI(); } });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => { search.value = ''; filterUI(); });
+    }
+  </script>
 </body>
 </html>
