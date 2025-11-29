@@ -131,6 +131,9 @@ $stmt->close();
     const search = document.getElementById('search');
     const clearBtn = document.getElementById('clearSearch');
     const turmaCards = Array.from(document.querySelectorAll('.turma-card'));
+    function norm(s){
+      return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    }
     function setActiveTurma(name) {
       // Atualiza estilo ativo
       turmaCards.forEach(c => c.classList.toggle('active', c.dataset.turma === name));
@@ -143,17 +146,21 @@ $stmt->close();
     turmaCards.forEach(c => c.addEventListener('click', () => setActiveTurma(c.dataset.turma)));
 
     function filterUI() {
-      const q = (search.value || '').trim().toLowerCase();
-      // Filtra cards de turmas por nome
+      const raw = norm(search.value || '');
+      const tokens = raw.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+      const hasQuery = tokens.length > 0;
+      // Filtra cards de turmas por nome (qualquer token por prefixo)
       turmaCards.forEach(c => {
-        const name = (c.dataset.turma || '').toLowerCase();
-        c.classList.toggle('hidden', q && !name.startsWith(q));
+        const name = norm(c.dataset.turma || '');
+        const match = !hasQuery || tokens.some(tok => name.startsWith(tok));
+        c.classList.toggle('hidden', !match);
       });
-      // Filtra linhas da tabela atual por prefixo
+      // Filtra linhas da tabela atual por prefixo em qualquer palavra
       document.querySelectorAll('.aluno-row').forEach(row => {
-        const hay = row.getAttribute('data-busca') || '';
-        const starts = hay.split(' ').some(part => part.startsWith(q));
-        row.classList.toggle('hidden', q && !starts);
+        const hay = norm(row.getAttribute('data-busca') || '');
+        const parts = hay.split(/\s+/);
+        const match = !hasQuery || tokens.some(tok => parts.some(p => p.startsWith(tok)));
+        row.classList.toggle('hidden', !match);
       });
     }
     if (search) {
